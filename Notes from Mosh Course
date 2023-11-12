@@ -1,0 +1,457 @@
+-- SELECT      AS 
+-- FROM
+-- LIMIT
+-- WHERE   >  < >= <= = != <> AND/ OR, 
+-- WHERE NOT
+-- AND always has priority
+
+SELECT *
+FROM customers
+WHERE birth_date > '1990-01-01' OR points > 1000 AND state = 'VA';
+
+SELECT * 
+FROM sql_store.order_items
+WHERE order_id = 6 AND unit_price * quantity > 30;
+-- NOT same
+SELECT * , (unit_price * quantity) AS total_price
+FROM sql_store.order_items
+WHERE order_id = 6 AND total_price > 30 ERROR;
+-- ERROR total_price unknown
+
+-- WHERE IN/ WHERE NOT IN
+SELECT * 
+FROM customers
+WHERE state = 'VA' OR state = 'GA' OR state = 'FL';
+-- same
+SELECT * 
+FROM customers
+WHERE state IN ('VA', 'GA', 'FL');
+
+-- BETWEEN
+SELECT * 
+FROM sustomers
+WHERE points BETWEEN 1000 AND 3000
+-- same
+WHERE points >= 1000 AND points <= 3000;
+
+-- LIKE/ NOT LIKE
+SELECT * 
+FROM customers
+WHERE last_name LIKE 'b%';
+-- 'b%'/ '%b%'/ '_y'/ 'b____y'
+-- % a few characters, _ exact one character
+-- eg.
+SELECT * 
+FROM customers
+WHERE address LIKE '%TRAIL%' OR address LIKE '%AVENUE%';
+
+-- REGEXP 'x$'
+-- REGEXP '^x'
+-- REGEXP 'x|y'
+-- REGEXP 'x[yz]'
+-- REGEXP 'x[a-m]'
+-- same for REGEXP 'field' containing field, REGEXP '^field' starting with field, REGEXP 'field$' end with field
+SELECT * 
+FROM sql_store.customers
+WHERE last_name regexp 'field$' ;
+-- |means or, ^ $ before |
+SELECT * 
+FROM sql_store.customers
+WHERE last_name regexp 'field|mac|rose';
+-- 'e[gim]' = containging eg or ei or em, similiarly '[gim]e'
+SELECT * 
+FROM sql_store.customers
+WHERE last_name regexp '[gim]e';
+-- '[a-i]e'
+SELECT * 
+FROM sql_store.customers
+WHERE last_name regexp '[a-i]e' ;
+
+-- what to do with missing value
+-- WHERE ... IS NULL/ IS NOT NULL
+
+-- ORDER BY
+SELECT * 
+FROM sql_store.customers
+ORDER BY first_name DESC;
+
+SELECT * 
+FROM sql_store.customers
+ORDER BY state, first_name ;
+-- can sort data based on all columns on the from tables, even not selected
+
+-- LIMIT
+SELECT * 
+FROM sql_store.customers
+LIMIT 3;
+
+SELECT * 
+FROM sql_store.customers
+LIMIT 6, 3;
+-- skip the first 6, list 7, 8, 9
+-- LIMIT comes at the end
+
+-- INNER JOIN/JOIN
+SELECT * 
+FROM sql_store.orders
+JOIN sql_store.customers 
+	ON sql_store.orders.customer_id = sql_store.customers.customer_id;
+-- When choosing column appearing both table, specific in which
+-- having alias o, c
+SELECT * 
+FROM sql_store.orders o
+JOIN sql_store.customers c
+	ON o.customer_id = c.customer_id;
+    
+SELECT order_id, oi.product_id, quantity, oi.unit_price
+FROM sql_store.order_items oi
+JOIN sql_store.products p on oi.product_id = p.product_id;
+
+-- SELF JOIN/JOIN
+USE sql_hr;
+
+SELECT * 
+FROM sql_hr.employees e
+JOIN employees m
+	ON e.reports_to = m.employee_id;
+--    
+USE sql_hr;
+
+SELECT 
+	e.employee_id,
+    e.first_name,
+    m.first_name AS manager
+FROM employees e
+JOIN employees m
+	ON e.reports_to = m.employee_id;
+    
+-- join 2 tables to 1 table
+USE sql_store;
+
+SELECT 
+	o.order_id, 
+    o.order_date,
+    c.first_name,
+    c.last_name,
+    os.name AS status
+    
+FROM orders o
+JOIN customers c
+	ON o.customer_id = c.customer_id
+JOIN order_statuses os
+	ON o.status = os.order_status_id;
+    
+-- join on based 2 conditions AND
+SELECT *
+FROM sql_store.order_items oi
+JOIN sql_store.order_item_notes oit
+	ON oi.order_id = oit.order_Id
+    AND oi.product_id = oit.product_id;
+    
+-- same
+SELECT *
+FROM sql_store.orders o
+JOIN sql_store.customers c
+	ON o.customer_id = c.customer_id;
+
+SELECT *
+FROM sql_store.orders o, sql_store.customers c
+WHERE o.customer_id = c.customer_id;
+
+-- we don't have customers who have not ordered by JOIN
+-- Here we use OUTER JOIN (LEFT JOIN, RIGHT JOIN)
+-- LEFT JOIN, whether the condition is true, the left table returns (include NULL)
+SELECT 
+    c.customer_id,
+    c.first_name,
+    o.order_id
+FROM sql_store.orders o
+RIGHT JOIN sql_store.customers c
+	ON o.customer_id = c.customer_id
+ORDER BY c.customer_id;
+
+-- outer join between multiple tables
+SELECT 
+    c.customer_id,
+    c.first_name,
+    o.order_id,
+    sh.name AS shipper
+FROM sql_store.orders o
+RIGHT JOIN sql_store.customers c
+	ON o.customer_id = c.customer_id
+LEFT JOIN sql_store.shippers sh
+	ON o.shipper_id = sh.shipper_id
+ORDER BY c.customer_id;
+-- avoid code looks complex, only using LEFT JOIN
+
+-- example
+USE sql_store;
+
+SELECT 
+	o.order_date,
+    o.order_id,
+    c.first_name,
+    s.shipper_id,
+    os.name AS status
+FROM orders o
+JOIN customers c
+	ON o.customer_id = c.customer_id
+JOIN order_statuses os
+	ON o.status = os.order_status_id
+LEFT JOIN shippers s
+	ON o.shipper_id = s.shipper_id
+ORDER BY status, order_id;
+
+USE sql_hr;
+
+SELECT
+	e.employee_id,
+    e.first_name,
+    m.first_name AS manager
+FROM employees e
+LEFT JOIN employees m
+-- find manager
+	ON e.reports_to = m.employee_id;
+-- missing manager's id and name, we only return people having a manager, 
+-- change to LEFT JOIN
+
+-- USING for same column names
+USE sql_store;
+
+SELECT *
+FROM orders o
+JOIN customers c 
+	-- ON o.customer_id = c.customer_id
+    USING (customer_id)
+JOIN shippers sh
+	USING (shipper_id);
+ 
+ -- USING ( , )
+SELECT *
+FROM order_items oi
+JOIN order_item_notes oin
+	-- ON oi.order_id = oin.order_id AND oi.product_id = oin.product_id
+	USING (order_id, product_id);
+
+-- natural join, join 2 table's common column
+USE sql_store;
+
+SELECT *
+FROM orders o 
+-- JOIN customers c USING (customer_id)
+NATURAL JOIN customers c;
+
+-- CROSS JOIN, match each each column, ABC 123 to A1 A2 A3 B1 B2 B3 C1 C2 C3
+USE sql_store;
+
+SELECT sh.name AS shipper, p.name AS product
+-- FROM products p, shippers sh 
+FROM products p
+CROSS JOIN shippers sh;
+
+-- adding columns
+USE sql_store;
+
+SELECT 
+	order_id,
+    order_date,
+    'active' AS status
+FROM orders
+WHERE order_date >= '2019-01-01';
+
+-- UNION, combine results from muiltiply queries, with same number of columns, 
+-- the result column name based on the first table
+USE sql_store;
+
+SELECT 
+	order_id,
+    order_date,
+    'active' AS status
+FROM orders
+WHERE order_date >= '2019-01-01'
+UNION 
+SELECT 
+	order_id,
+    order_date,
+    'archive' AS status
+FROM orders
+WHERE order_date <= '2019-01-01';
+
+-- UNION example
+USE sql_store;
+
+SELECT customer_id, first_name, points, 
+	'Bronze' AS type
+FROM customers
+WHERE points < 2000 
+UNION
+SELECT customer_id, first_name, points, 
+	'Silver' AS type
+FROM customers
+WHERE points >= 2000 AND points < 3000
+UNION
+SELECT customer_id, first_name, points, 
+	'Gold' AS type
+FROM customers
+WHERE points >= 3000
+ORDER BY first_name;
+
+-- insert, updata and delete data
+-- INSERT INTO
+INSERT INTO sql_store.customers 
+-- follow the columns, be careful where can use NULL
+VALUES (
+	DEFAULT,
+	'John', 
+    'Smith', 
+    '1990-01-01',
+    NULL,
+    'address',
+    'city'
+    'CA',
+    default);
+-- same way
+-- only state values with not null entry
+-- do not need to follow the sequence of column
+INSERT INTO sql_store.customers (
+	first_name,
+    last_name,
+    birth_date,
+    address,
+    city,
+    state)
+VALUES (
+	'John', 
+    'Smith', 
+    '1990-01-01',
+    'address',
+    'city'
+    'CA');
+-- INSERT MULTIPLE ROWS
+INSERT INTO sql_store.shipper (name)
+VALUES ('shipper 1'), ('shipper 2'), ('shipper 3');
+
+-- insert into multiple tables
+INSERT INTO sql_store.orders (customer_id, order_date, status)
+VALUES (1, '2019-01-02', 1);
+
+SELECT LAST_INSERT_ID();
+
+-- insert into multiple tables
+INSERT INTO sql_store.orders (customer_id, order_date, status)
+VALUES (1, '2019-01-02', 1);
+
+INSERT INTO sql_store.order_items
+VALUES 
+	(LAST_INSERT_ID(), 1, 1, 2.95),
+    (LAST_INSERT_ID(), 2, 1, 3.95);
+
+-- create a copy of table
+CREATE TABLE sql_store.orders_archived AS 
+SELECT * FROM sql_store.orders;
+-- copy orders table, but we don't have a primary key of order id
+
+-- truncate table
+-- using select statement as a subquery
+-- subquery starting form SELECT
+INSERT INTO sql_store.orders_archived
+
+SELECT *
+FROM sql_store.orders
+WHERE order_date < '2019-01-01';
+
+
+USE sql_invoicing;
+
+CREATE TABLE invoice_archived AS
+-- the following is subquery as AS
+SELECT i.invoice_id, i.number, c.name AS client, i.invoice_total, i.payment_total, i.invoice_date, i.payment_date, i.due_date
+FROM invoices i
+JOIN clients c
+	USING (client_id)
+WHERE payment_date is NOT NULL;
+
+-- update data 
+-- UPDATE + table, 
+-- SET + column, 
+-- WHERE + condition
+USE sql_invoicing;
+UPDATE invoices
+SET payment_total = 10, payment_date = '2019-03-01'
+WHERE invoice_id = 1;
+
+-- default, null
+USE sql_invoicing;
+UPDATE invoices
+SET payment_total = default, payment_date = NULL
+WHERE invoice_id = 1;
+
+-- not exact data
+USE sql_invoicing;
+UPDATE invoices
+SET 
+	payment_total = invoice_total * 0.5, 
+    payment_date = due_date
+WHERE invoice_id = 3;
+
+-- update single record
+USE sql_invoicing;
+UPDATE invoices
+SET 
+	payment_total = invoice_total * 0.5, 
+    payment_date = due_date
+WHERE client_id IN (3, 4);
+
+-- use subqueries in an update statement
+USE sql_invoicing;
+UPDATE invoices
+SET 
+	payment_total = invoice_total * 0.5, 
+    payment_date = due_date
+WHERE client_id = 3;
+
+SELECT client_id
+FROM clients
+WHERE name = 'Myworks';
+
+-- same
+USE sql_invoicing;
+UPDATE invoices
+SET 
+	payment_total = invoice_total * 0.5, 
+    payment_date = due_date
+WHERE client_id = 
+			(SELECT client_id
+			FROM clients
+			WHERE name = 'Myworks');
+
+-- IN            
+USE sql_invoicing;
+UPDATE invoices
+SET 
+	payment_total = invoice_total * 0.5, 
+    payment_date = due_date
+-- cannot use = for multi records,
+WHERE client_id IN 
+			(SELECT client_id
+			FROM clients
+			WHERE state IN ('CA', 'NY'));
+-- test the subquery at first
+
+-- exapmle
+-- have to SELECT columns
+USE sql_store;
+
+UPDATE orders
+SET comments = 'Gold Customer'
+WHERE customer_id IN
+			(SELECT customer_id
+			FROM customers
+			WHERE points > 3000);
+            
+-- delete data
+DELETE FROM sql_invoicing.invoices
+WHERE client_id = 
+	(SELECT client_id
+	FROM sql_invoicing.clients
+	WHERE name = 'Myworks');
