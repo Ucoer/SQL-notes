@@ -2,4 +2,4 @@
 
 Records of my notes during SQL learning.
 
-Notes by Mosh Youtube is my notes from MySQL Tutorial for Beginners by Mosh in Youtube.
+Rescources from MySQL Tutorial for Beginners by Mosh on Youtube & SQL for Data Science on Coursera.
