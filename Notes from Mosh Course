@@ -455,3 +455,40 @@ WHERE client_id =
 	(SELECT client_id
 	FROM sql_invoicing.clients
 	WHERE name = 'Myworks');
+
+-- CASE
+CASE
+WHEN condition1 THEN outcome1
+WHEN condition2 THEN outcome2
+ELSE [result slse]
+END
+-- example
+SELECT
+	employeeid,
+	firstname,
+	lastname,
+	city,
+	CASE city
+	WHEN 'calgary' THEN 'calgary'
+	ELSE 'other'
+-- the input under title 'calgary' is 'calgary' or 'other'
+		END calgary
+-- the title is 'calgary'
+FROM employees
+ORDER BY lastname, firstname;
+
+-- example
+SELECT
+	trackid,
+	name,
+	bytes,
+	CASE
+	WHEN bytes < 300000 THEN 'small'
+	WHEN bytes >= 300001 AND bytes <= 500000 THEN 'medium'
+	WHEN bytes >= 500000 THEN 'large'
+	ELSE 'other'
+-- category the content under bytescategory
+	END bytescategory
+-- name this column bytescategory
+FROM tracks;
+	
